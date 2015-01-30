@@ -19,25 +19,27 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+
 /**
  * JavaBean转Map工具类
  * @author zhangheng
  */
 final public class JxClass {
 	
-	public static final String CLASS_FIELD_NAME = "#@#";
+	public static final String CLASS_NAME = "#$";
+	public static final String CLASS_STATIC = "#@";
 	
 	public static boolean cacheJavaClass = true;
 	public static boolean supportCyclicReference = false;
 	public static boolean supportCustomJavaBeanMethod = false;
 
-	public static Map<String, Object> toMap(Object pojo) throws Exception{
+	public static Map<String,Object> toMap(Object pojo) throws Exception{
 		return toMap(pojo, supportCustomJavaBeanMethod, new IdentityHashMap<Object, Object>(2), supportCyclicReference);
 	}
-	public static Map<String, Object> toMap(Object pojo, boolean supportCusstormBeanMethod) throws Exception{
+	public static Map<String,Object> toMap(Object pojo, boolean supportCusstormBeanMethod) throws Exception{
 		return toMap(pojo, supportCusstormBeanMethod, new IdentityHashMap<Object, Object>(2), supportCyclicReference);
 	}
-	public static Map<String, Object> toMap(Object pojo, boolean supportCusstormBeanMethod, boolean supportReference) throws Exception{
+	public static Map<String,Object> toMap(Object pojo, boolean supportCusstormBeanMethod, boolean supportReference) throws Exception{
 		if(pojo==null){
 			return null;
 		}
@@ -53,11 +55,16 @@ final public class JxClass {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public static Map<String, Object> toMap(Object pojo, boolean supportCusstormBeanMethod, IdentityHashMap<Object, Object> dict, boolean supportReference) throws Exception{
+	public static Map<String,Object> toMap(Object pojo, boolean supportCusstormBeanMethod, IdentityHashMap<Object, Object> dict, boolean supportReference) throws Exception{
 		if(pojo==null){
 			return null;
 		}
-		
+		if(Class.class.isInstance(pojo)){
+			Map<String,Object> fieldMap = new HashMap<String, Object>(2);
+			fieldMap.put(CLASS_NAME, ((Class<?>)pojo).getCanonicalName());
+			fieldMap.put(CLASS_STATIC, true);
+			return fieldMap;
+		}
 		Class<?> pojoClazz = pojo.getClass();
 		if (pojoClazz.getCanonicalName() == null) {
 			throw new IllegalArgumentException(
@@ -65,7 +72,7 @@ final public class JxClass {
 		}
 		if(dict!=null && dict.containsKey(pojo)){
 			if(supportReference){
-				return (Map<String, Object>)dict.get(pojo);
+				return (Map<String,Object>)dict.get(pojo);
 			}
 			return null;
 		}
@@ -75,7 +82,7 @@ final public class JxClass {
 		
 		JxAcc[] accList = JxAcc.getAccList(pojoClazz, supportCusstormBeanMethod);
 		
-		Map<String, Object> fieldMap = new HashMap<String, Object>(accList.length);
+		Map<String,Object> fieldMap = new HashMap<String, Object>(accList.length+1);
 		if(dict!=null)dict.put(pojo, fieldMap);
 		
 		for (JxAcc jfield : accList) {
@@ -95,7 +102,7 @@ final public class JxClass {
 //				fieldMap.put(fieldName, fieldValue);
 //			}
 		}
-		fieldMap.put(CLASS_FIELD_NAME, pojoClazz.getCanonicalName());
+		fieldMap.put(CLASS_NAME, pojoClazz.getCanonicalName());
 		return fieldMap;
 	}
 	@SuppressWarnings("rawtypes")
@@ -185,9 +192,9 @@ final public class JxClass {
 	 */
 	@SuppressWarnings("rawtypes")
 	public static Class<?> findJavaBeanClass(Map map){
-		if(map.containsKey(CLASS_FIELD_NAME)){
+		if(map.containsKey(CLASS_NAME)){
 			try {
-				return Class.forName(String.valueOf(map.get(CLASS_FIELD_NAME)));
+				return Class.forName(String.valueOf(map.get(CLASS_NAME)));
 			} catch (ClassNotFoundException e) {
 				//e.printStackTrace();
 			}
@@ -201,9 +208,18 @@ final public class JxClass {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static Object tryToJavaBean(Map map){
-		if(map.containsKey(CLASS_FIELD_NAME)){
+		if(map.containsKey(CLASS_NAME)){
 			try {
-				Class clazz = Class.forName(String.valueOf(map.get(CLASS_FIELD_NAME)));
+				Class clazz = Class.forName(String.valueOf(map.get(CLASS_NAME)));
+				map.remove(CLASS_NAME);
+				if(map.containsKey(CLASS_STATIC) && map.size()==2){
+					Object st = map.get(CLASS_STATIC);
+					if(
+							(st instanceof Boolean && ((Boolean)st)==true)||
+							(st instanceof Number && ((Number)st).intValue()!=0)
+					)
+						return clazz;
+				}
 				return fromMap(map, clazz);
 			} catch (Exception e) {
 				//e.printStackTrace();

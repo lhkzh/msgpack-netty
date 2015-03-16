@@ -89,7 +89,10 @@ class MsgPackPacker {
 			}
 			packBinary(data, out);
 		} else if (item instanceof Map) {
-			if(cyclicMap!=null && cyclicMap.containsKey(item))return;
+			if(cyclicMap!=null && cyclicMap.containsKey(item)){
+				out.writeByte(Code.NIL);
+				return;
+			}
 			cyclicMap.put(item, item);
 			
 			Map<Object, Object> map = (Map<Object, Object>)item;
@@ -99,7 +102,10 @@ class MsgPackPacker {
 				pack(kvp.getValue(), out, format, cyclicMap);
 			}
 		} else if (item instanceof Collection) {
-			if(cyclicMap!=null && cyclicMap.containsKey(item))return;
+			if(cyclicMap!=null && cyclicMap.containsKey(item)){
+				out.writeByte(Code.NIL);
+				return;
+			}
 			cyclicMap.put(item, item);
 			
 			Collection<Object> list = (Collection<Object>)item;
@@ -108,8 +114,14 @@ class MsgPackPacker {
 				pack(element, out, format, cyclicMap);
 			}
 		} else if (item.getClass().isArray()) {
-			if(cyclicMap!=null && cyclicMap.containsKey(item))return;
-			cyclicMap.put(item, item);
+			boolean isBaseArray = JxClass.isPrimitiveArray(item.getClass());
+			if(isBaseArray==false){
+				if(cyclicMap!=null && cyclicMap.containsKey(item)){
+					out.writeByte(Code.NIL);
+					return;
+				}
+				cyclicMap.put(item, item);
+			}
 			
 			int size = Array.getLength(item);
 			packArrayHeader(size, out);
@@ -131,7 +143,10 @@ class MsgPackPacker {
 		else {
 //			throw new IllegalArgumentException("Cannot msgpack object of type " + item.getClass().getCanonicalName());
 			if(format.isJavaBeanSupport()){
-				if(cyclicMap!=null && cyclicMap.containsKey(item))return;
+				if(cyclicMap!=null && cyclicMap.containsKey(item)){
+					out.writeByte(Code.NIL);
+					return;
+				}
 				cyclicMap.put(item, item);
 				try{
 					pack(JxClass.toMap(item), out, format, cyclicMap);

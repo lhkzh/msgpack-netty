@@ -395,39 +395,23 @@ final public class JxClass {
 	}
 	
 
-	private static Map<Class<?>, Boolean> arrBaseMap = new HashMap<Class<?>, Boolean>(18,1);
-	private static Map<Class<?>, Boolean> baseMap = new HashMap<Class<?>, Boolean>(8,1);
-	static{
-		arrBaseMap.put(byte[].class, true);
-		arrBaseMap.put(Byte[].class, true);
-		arrBaseMap.put(short[].class, true);
-		arrBaseMap.put(Short[].class, true);
-		arrBaseMap.put(int[].class, true);
-		arrBaseMap.put(Integer[].class, true);
-		arrBaseMap.put(long[].class, true);
-		arrBaseMap.put(Long[].class, true);
-		arrBaseMap.put(float[].class, true);
-		arrBaseMap.put(Float[].class, true);
-		arrBaseMap.put(double[].class, true);
-		arrBaseMap.put(Double[].class, true);
-		arrBaseMap.put(char[].class, true);
-		arrBaseMap.put(Character[].class, true);
-		arrBaseMap.put(String[].class, true);
-//		arrBaseMap.put(Object[].class, true);
-		
-		baseMap.put(Byte.class, true);
-		baseMap.put(Short.class, true);
-		baseMap.put(Integer.class, true);
-		baseMap.put(Long.class, true);
-		baseMap.put(Float.class, true);
-		baseMap.put(Double.class, true);
-		baseMap.put(Character.class, true);
-		baseMap.put(String.class, true);
-	}
 	public static boolean isPrimitiveArray(Class<?> clazz){
-		return clazz.isArray() && arrBaseMap.containsKey(clazz);
+		return clazz.isArray() && isPrimitive(clazz.getComponentType());
 	}
 	public static boolean isPrimitive(Class<?> clazz){
-		return clazz.isPrimitive() || baseMap.containsKey(clazz);
+		return clazz.isPrimitive() || 
+				clazz.equals(Boolean.class) ||
+				clazz.equals(Byte.class) ||
+				clazz.equals(Short.class) ||
+				clazz.equals(Integer.class) ||
+				clazz.equals(Long.class) ||
+				clazz.equals(Float.class) ||
+				clazz.equals(Double.class) ||
+				clazz.equals(Character.class) ||
+				clazz.equals(String.class)
+				;
+	}
+	public static boolean isPrimitiveOrArray(Class<?> clazz){
+		return isPrimitive(clazz) || isPrimitiveArray(clazz);
 	}
 }
